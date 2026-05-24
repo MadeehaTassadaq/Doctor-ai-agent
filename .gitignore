@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+.env
+.DS_Store
+.vscode/
+.idea/
+.claude/settings.local.json
+.claude/hooks/
+uv.lock

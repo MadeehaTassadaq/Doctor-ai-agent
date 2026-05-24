@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  api-gateway:
+    build:
+      context: ./apps/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL:-https://<project>.supabase.co/auth/v1/.well-known/jwks.json}
+      - SUPABASE_PROJECT_REF=${SUPABASE_PROJECT_REF:-}
+      - SUPABASE_WEBHOOK_SECRET=${SUPABASE_WEBHOOK_SECRET:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/doctorai
+      - REDIS_URL=redis://redis:6379/0
+      - FRONTEND_URL=http://localhost:3000
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      - INTERNAL_AUTH_TOKEN=${INTERNAL_AUTH_TOKEN:-dev-internal-token}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - doctorai-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=doctorai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - doctorai-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - doctorai-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  doctorai-network:
+    driver: bridge
